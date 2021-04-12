@@ -1,3 +1,16 @@
+# Welcome To The CryptoMayor's Map
+
+This map was built for the CryptoMayor community. It belongs to all of us.
+
+PRs welcome. Create an Github issue for any feature requests or improvement poposals.
+
+The codebase is currently fairly small and almost entirely contained in src/App.js. 
+
+It was created using "Create React App".
+
+The maintainer is primarily a back-end engineer, so we hope you'll forgive any React anti-patterns.
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
