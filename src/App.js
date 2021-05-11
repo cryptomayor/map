@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMapGL, {Marker, Source, Layer, MapContext, FullscreenControl, Popup} from 'react-map-gl';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Coordinates from './coords.js'
-import { FaMapPin } from 'react-icons/fa';
+import { FaMapPin, FaTwitter } from 'react-icons/fa';
 import mapboxgl from "mapbox-gl"; // This is a dependency of react-map-gl even if you didn't explicitly install it
 
 // eslint-disable-next-line import/no-webpack-loader-syntax
@@ -152,16 +152,21 @@ function Token(props) {
 
     const policyId = '5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47';
     const dandelionAPI = 'https://graphql-api.mainnet.dandelion.link'
+    //const dandelionAPI = 'https://4-0-0.graphql-api.mainnet.dandelion.link'
+    const metadataEndpoint = `metadata/CryptoMayor${props.id}`
 
     const [owner, setOwner] = React.useState();
     const [metadata, setMetadata] = React.useState();
+    const [twitterHandle, setTwitterHandle] = React.useState('');
+    const assetId = policyId + `CryptoMayor${props.id}`.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
 
     const displayOwner = () => {
         setOwner(null)
+        setTwitterHandle(null)
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({'query': `query {utxos(where: {tokens: {_and : [{ policyId: {_eq: "${policyId}"}},{assetName:{_eq: "CryptoMayor${props.id}"}}]}}) {address}}`})
+            body: JSON.stringify({'query': `query {utxos(where: {tokens: {asset: {assetId:{_eq: "${assetId}"}}}}) {address}}`})
         };
         fetch(dandelionAPI, requestOptions)
             .then(response => response.json())
@@ -170,8 +175,39 @@ function Token(props) {
                 console.log(data);
                 if (data.data.utxos.length > 0) {
                   setOwner(data.data.utxos[0].address)
+                  displayChainMetadata(data.data.utxos[0].address)
                 } else {
                   setOwner('unowned')
+                }
+            }).catch(error => {
+                console.log(error);
+                setOwner("apiError");
+            });
+    }
+
+    const displayChainMetadata = (forOwner) => {
+        const query = JSON.stringify({'query': `query {transactions(where: {_and: [{inputs: {address: {_eq: "${forOwner}"}}}{outputs: {address: {_eq: "${forOwner}"}}}]}) {metadata {key, value}, outputs {address}, includedAt, inputs {tokens {asset {fingerprint, assetId, assetName}}}}}`})
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: query,
+        };
+        fetch(dandelionAPI, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                if (data.data.transactions.length > 0) {
+                  const sortedList = data.data.transactions.sort((a, b) => (a.includedAt > b.includedAt) ? 1 : -1)
+                  const mostRecent = sortedList[sortedList.length - 1]
+                  if (mostRecent.metadata && mostRecent.metadata.length > 0) {
+                      console.log('foundone');
+                      console.log(mostRecent.metadata);
+                      const nftData = mostRecent.metadata.find(element => element.key == "808");
+                      if (nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"]) {
+                          if (nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"].twitterHandle) {
+                            setTwitterHandle(nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"].twitterHandle);
+                          }
+                      }
+                  }
                 }
             }).catch(error => {
                 console.log(error);
@@ -180,43 +216,14 @@ function Token(props) {
 
     const displayMetadata = () => {
         setMetadata(null)
-        const query = `query {
-          transactions(
-            where: {
-              mint: {
-                _and: [
-                  { 
-                    assetName: {
-                      _eq: "CryptoMayor${props.id}"
-                    }
-                  }
-                  {
-                    policyId: {
-                      _eq: "${policyId}"
-                    }
-                  }
-                ]
-              }
-            }
-          ) {
-            metadata { value }
-          }
-        }`
         const requestOptions = {
-            method: 'POST',
+            method: 'GET',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({'query': query})
         };
-        fetch(dandelionAPI, requestOptions)
+        fetch(metadataEndpoint, requestOptions)
             .then(response => response.json())
             .then(data => {
-                console.log("foo");
-                console.log(data);
-                if (data.data.transactions.length > 0) {
-                  const tokenMetadata = data.data.transactions[0].metadata[0].value[policyId][`CryptoMayor${props.id}`]
-                  console.log(tokenMetadata);
-                  setMetadata(tokenMetadata)
-                }
+                setMetadata(data)
             }).catch(error => {
                 console.log(error);
             });
@@ -235,12 +242,14 @@ function Token(props) {
             { metadata && (
                 <div>
                   <h5>{ metadata.name }</h5>
-                  <img class="img-fluid mb-2" style={{maxWidth: "100px", height: "auto"}} src={`https://ipfs.blockfrost.dev/ipfs/${metadata.image.slice(5)}`} />
+                  <img class="img-fluid mb-2" style={{maxWidth: "100px", height: "auto"}} src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`} />
                 </div>
               )
             }
+            { owner === "apiError" && <a target="_blank" href={`https://cryptomayor.io/#/city/${props.id}`}>See additional details here</a> }
             { owner === "unowned" && <a target="_blank" href={`https://cryptomayor.io/#/city/${props.id}`}>unowned! get it now</a> }
-            { owner && owner !== "unowned" && <div>Owned By: <a target="_blank" href={`https://pool.pm/${owner}`}>{owner.slice(0, 12)}...</a></div> }
+            { owner && owner !== "apiError" && owner !== "unowned" && <div>Owned By: <a target="_blank" href={`https://pool.pm/${owner}`}>{owner.slice(0, 12)}...</a></div> }
+            { twitterHandle && <a target="_blank" href={`https://twitter.com/${twitterHandle}`}>{twitterHandle} <FaTwitter /></a> }
           </div>
       </div>
     )
