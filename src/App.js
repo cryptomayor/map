@@ -1,8 +1,7 @@
-import logo from './logo.svg';
 import './App.css';
 import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import ReactMapGL, {Marker, Source, Layer, MapContext, FullscreenControl, Popup} from 'react-map-gl';
+import ReactMapGL, {Marker, FullscreenControl, Popup} from 'react-map-gl';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Coordinates from './coords.js'
 import { FaMapPin, FaTwitter } from 'react-icons/fa';
@@ -11,65 +10,12 @@ import mapboxgl from "mapbox-gl"; // This is a dependency of react-map-gl even i
 // eslint-disable-next-line import/no-webpack-loader-syntax
 mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
 
-
-
-
-function CustomMarker(props) {
-  const context = React.useContext(MapContext);
-  
-  const {longitude, latitude} = props;
-
-  const [x, y] = context.viewport.project([longitude, latitude]);
-
-  const markerStyle = {
-    position: 'absolute',
-    background: '#fff',
-    left: x,
-    top: y
-  };
-
-  return (
-    <div style={markerStyle} >
-      ({longitude}, {latitude})
-    </div>
-  );
-}
-
-const geojson = {
-  type: 'FeatureCollection',
-  features: [
-    {type: 'Feature', geometry: {type: 'Point', coordinates: [-122.4, 37.8]}}
-  ]
-};
-
-const layerStyle = {
-  id: 'point',
-  type: 'circle',
-  paint: {
-    'circle-radius': 10,
-    'circle-color': '#007cbf'
-  }
-};
-
-
-const parkLayer = {
-  id: 'landuse_park',
-  type: 'fill',
-  source: 'mapbox',
-  'source-layer': 'landuse',
-  filter: ['==', 'class', 'park']
-};
-
-
-
 const fullscreenControlStyle= {
   right: 10,
   top: 10
 };
 
-
 function Pin(props) {
-
       return(
         <Marker key={props.id} offsetTop={-30} offsetLeft={-15} longitude={props.longitude} latitude={props.latitude} >
           <FaMapPin size={30} onClick={() => props.select({ id: props.id, latitude: props.latitude, longitude: props.longitude })} />
@@ -93,44 +39,38 @@ function Map() {
     togglePopup(true);
   }
 
-  let places = [];
   const markers = [];
   if (mapRef.current) {
     const bounds = mapRef.current.getBounds()
     
     let pins = 0;
-    console.log("reloading pins")
-    Coordinates.some(function(coordinates) { 
+    for (let coordinates of Coordinates) { 
       const key = coordinates[0]
       const lat = coordinates[1]
       const lng = coordinates[2]
 
       if (bounds.contains([lng, lat])) {
         markers.push(
-          <Pin id={key} latitude={lat} longitude={lng} select={select} />
+          <Pin id={key} key={key} latitude={lat} longitude={lng} select={select} />
         )
         pins += 1;
       }
-      return pins >= 20;
-    });
+
+      if (pins >= 20) {
+        break
+      }
+    }
   }
 
   const [location, setLocation] = React.useState();
   const [showPopup, togglePopup] = React.useState(false);
 
-
-  const onLoad = () => {
-    console.log('mapRef.current is ready for use', mapRef.current.getBounds());
-  }
-
   return (
-
     <ReactMapGL {...viewport} 
         width="100vw" 
         height="100vh"
         onViewportChange={setViewport}
         ref={ref => mapRef.current = ref && ref.getMap()}
-        onLoad={onLoad}
         mapboxApiAccessToken="pk.eyJ1IjoiY3J5cHRvbWF5b3IiLCJhIjoiY2tuYzh5bHAwMGJocjJvcnpzdGltdmZtOSJ9.H5wrB8rdRFgzgKbtPi3z5Q"
     >
       <FullscreenControl style={fullscreenControlStyle} />
@@ -152,7 +92,6 @@ function Token(props) {
 
     const policyId = '5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47';
     const dandelionAPI = 'https://graphql-api.mainnet.dandelion.link'
-    //const dandelionAPI = 'https://4-0-0.graphql-api.mainnet.dandelion.link'
     const metadataEndpoint = `metadata/CryptoMayor${props.id}`
 
     const [owner, setOwner] = React.useState();
@@ -160,38 +99,15 @@ function Token(props) {
     const [twitterHandle, setTwitterHandle] = React.useState('');
     const assetId = policyId + `CryptoMayor${props.id}`.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
 
-    const displayOwner = () => {
-        setOwner(null)
-        setTwitterHandle(null)
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({'query': `query {utxos(where: {tokens: {asset: {assetId:{_eq: "${assetId}"}}}}) {address}}`})
-        };
-        fetch(dandelionAPI, requestOptions)
-            .then(response => response.json())
-            .then(data => {
-                console.log("foo");
-                console.log(data);
-                if (data.data.utxos.length > 0) {
-                  setOwner(data.data.utxos[0].address)
-                  displayChainMetadata(data.data.utxos[0].address)
-                } else {
-                  setOwner('unowned')
-                }
-            }).catch(error => {
-                console.log(error);
-                setOwner("apiError");
-            });
-    }
-
     const displayChainMetadata = (forOwner) => {
         const query = JSON.stringify({'query': `query {transactions(where: {_and: [{inputs: {address: {_eq: "${forOwner}"}}}{outputs: {address: {_eq: "${forOwner}"}}}]}) {metadata {key, value}, outputs {address}, includedAt, inputs {tokens {asset {fingerprint, assetId, assetName}}}}}`})
+
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: query,
         };
+
         fetch(dandelionAPI, requestOptions)
             .then(response => response.json())
             .then(data => {
@@ -199,9 +115,7 @@ function Token(props) {
                   const sortedList = data.data.transactions.sort((a, b) => (a.includedAt > b.includedAt) ? 1 : -1)
                   const mostRecent = sortedList[sortedList.length - 1]
                   if (mostRecent.metadata && mostRecent.metadata.length > 0) {
-                      console.log('foundone');
-                      console.log(mostRecent.metadata);
-                      const nftData = mostRecent.metadata.find(element => element.key == "808");
+                      const nftData = mostRecent.metadata.find(element => element.key === "808");
                       if (nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"]) {
                           if (nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"].twitterHandle) {
                             setTwitterHandle(nftData.value["5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47"].twitterHandle);
@@ -210,11 +124,35 @@ function Token(props) {
                   }
                 }
             }).catch(error => {
-                console.log(error);
+              // TODO: Error handling
             });
     }
 
-    const displayMetadata = () => {
+    useEffect(() => {
+      const displayOwner = () => {
+        setOwner(null)
+        setTwitterHandle(null)
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({'query': `query {utxos(where: {tokens: {asset: {assetId:{_eq: "${assetId}"}}}}) {address}}`})
+        };
+
+        fetch(dandelionAPI, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                if (data.data.utxos.length > 0) {
+                  setOwner(data.data.utxos[0].address)
+                  displayChainMetadata(data.data.utxos[0].address)
+                } else {
+                  setOwner('unowned')
+                }
+              }).catch(() => {
+              setOwner("apiError");
+            });
+    }
+
+      const displayMetadata = () => {
         setMetadata(null)
         const requestOptions = {
             method: 'GET',
@@ -224,35 +162,35 @@ function Token(props) {
             .then(response => response.json())
             .then(data => {
                 setMetadata(data)
-            }).catch(error => {
-                console.log(error);
+            }).catch(() => {
+                // TODO: Error Handling
             });
-    }
+      }
 
-    useEffect(() => {
-      console.log(props.id);
       displayOwner();
       displayMetadata();
-    }, [props.id]);
+    }, [props.id, assetId, metadataEndpoint]);
 
+    /* eslint-disable react/jsx-no-target-blank */
     return (
-      <div class="mt-3">
+      <div className="mt-3">
           CryptoMayor{props.id}
           <div>
             { metadata && (
                 <div>
                   <h5>{ metadata.name }</h5>
-                  <img class="img-fluid mb-2" style={{maxWidth: "100px", height: "auto"}} src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`} />
+                  <img alt={`CryptoMayor${props.id}`} class="img-fluid mb-2" style={{maxWidth: "100px", height: "auto"}} src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`} />
                 </div>
               )
             }
-            { owner === "apiError" && <a target="_blank" href={`https://cryptomayor.io/#/city/${props.id}`}>See additional details here</a> }
-            { owner === "unowned" && <a target="_blank" href={`https://cryptomayor.io/#/city/${props.id}`}>unowned! get it now</a> }
-            { owner && owner !== "apiError" && owner !== "unowned" && <div>Owned By: <a target="_blank" href={`https://pool.pm/${owner}`}>{owner.slice(0, 12)}...</a></div> }
-            { twitterHandle && <a target="_blank" href={`https://twitter.com/${twitterHandle}`}>{twitterHandle} <FaTwitter /></a> }
+            { owner === "apiError" && <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${props.id}`}>See additional details here</a> }
+            { owner === "unowned" && <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${props.id}`}>unowned! get it now</a> }
+            { owner && owner !== "apiError" && owner !== "unowned" && <div>Owned By: <a target="_blank" rel="noopener" href={`https://pool.pm/${owner}`}>{owner.slice(0, 12)}...</a></div> }
+            { twitterHandle && <a target="_blank" rel="noopener" href={`https://twitter.com/${twitterHandle}`}>{twitterHandle} <FaTwitter /></a> }
           </div>
       </div>
     )
+    /* eslint-enable react/jsx-no-target-blank */
 }
 
 function App() {
