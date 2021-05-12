@@ -44,7 +44,6 @@ function Map() {
     const bounds = mapRef.current.getBounds()
     
     let pins = 0;
-    console.log("reloading pins")
     for (let coordinates of Coordinates) { 
       const key = coordinates[0]
       const lat = coordinates[1]
@@ -66,19 +65,12 @@ function Map() {
   const [location, setLocation] = React.useState();
   const [showPopup, togglePopup] = React.useState(false);
 
-
-  const onLoad = () => {
-    console.log('mapRef.current is ready for use', mapRef.current.getBounds());
-  }
-
   return (
-
     <ReactMapGL {...viewport} 
         width="100vw" 
         height="100vh"
         onViewportChange={setViewport}
         ref={ref => mapRef.current = ref && ref.getMap()}
-        onLoad={onLoad}
         mapboxApiAccessToken="pk.eyJ1IjoiY3J5cHRvbWF5b3IiLCJhIjoiY2tuYzh5bHAwMGJocjJvcnpzdGltdmZtOSJ9.H5wrB8rdRFgzgKbtPi3z5Q"
     >
       <FullscreenControl style={fullscreenControlStyle} />
@@ -109,11 +101,13 @@ function Token(props) {
 
     const displayChainMetadata = (forOwner) => {
         const query = JSON.stringify({'query': `query {transactions(where: {_and: [{inputs: {address: {_eq: "${forOwner}"}}}{outputs: {address: {_eq: "${forOwner}"}}}]}) {metadata {key, value}, outputs {address}, includedAt, inputs {tokens {asset {fingerprint, assetId, assetName}}}}}`})
+
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: query,
         };
+
         fetch(dandelionAPI, requestOptions)
             .then(response => response.json())
             .then(data => {
@@ -130,7 +124,7 @@ function Token(props) {
                   }
                 }
             }).catch(error => {
-                console.log(error);
+              // TODO: Error handling
             });
     }
 
@@ -143,20 +137,18 @@ function Token(props) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({'query': `query {utxos(where: {tokens: {asset: {assetId:{_eq: "${assetId}"}}}}) {address}}`})
         };
+
         fetch(dandelionAPI, requestOptions)
             .then(response => response.json())
             .then(data => {
-                console.log("foo");
-                console.log(data);
                 if (data.data.utxos.length > 0) {
                   setOwner(data.data.utxos[0].address)
                   displayChainMetadata(data.data.utxos[0].address)
                 } else {
                   setOwner('unowned')
                 }
-            }).catch(error => {
-                console.log(error);
-                setOwner("apiError");
+              }).catch(() => {
+              setOwner("apiError");
             });
     }
 
@@ -170,8 +162,8 @@ function Token(props) {
             .then(response => response.json())
             .then(data => {
                 setMetadata(data)
-            }).catch(error => {
-                console.log(error);
+            }).catch(() => {
+                // TODO: Error Handling
             });
       }
 
