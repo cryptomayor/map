@@ -4,11 +4,6 @@ import ReactMapGL, {Marker, FullscreenControl, Popup, MapRef} from 'react-map-gl
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Coordinates from './coords'
 import { FaMapPin, FaTwitter } from 'react-icons/fa';
-import mapboxgl from 'mapbox-gl';
-
-// @ts-ignore
-// eslint-disable-next-line import/no-webpack-loader-syntax
-mapboxgl.workerClass = require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
 
 interface Metadata {
   elevation: number
@@ -29,7 +24,6 @@ type Location = {
   longitude: number
   latitude: number
 }
-
 
 const fullscreenControlStyle= {
   right: 10,
@@ -182,7 +176,6 @@ function Token({id} : {id: number}) {
         fetch(metadataEndpoint, requestOptions)
             .then(response => response.json())
             .then(data => {
-              console.log(data)
                 setMetadata(data)
             }).catch(() => {
                 // TODO: Error Handling
