@@ -102,7 +102,7 @@ const Token = ({ id }: { id: number }) => {
 
   /* eslint-disable react/jsx-no-target-blank */
   return (
-    <div className="mt-3">
+    <div>
       CryptoMayor{id}
       <div>
         {metadata && (
@@ -111,7 +111,6 @@ const Token = ({ id }: { id: number }) => {
             {metadata.image && (
               <img
                 alt={`CryptoMayor${id}`}
-                className="img-fluid mb-2"
                 style={{ maxWidth: '100px', height: 'auto' }}
                 src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`}
               />
