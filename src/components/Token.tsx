@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 import { FaTwitter } from 'react-icons/fa'
 import { Metadata } from '../common/types'
+import styled from '@emotion/styled'
+
+const TokenImage = styled.img`
+  max-width: 100px;
+  height: auto;
+`
+
+const CryptoMayorContainer = styled.div`
+  padding-top: 10px;
+`
 
 const Token = ({ id }: { id: number }) => {
   const policyId = '5e889bcb83b884bb6d768cfc483845cd6ccee79c2b5a4a15dae7ff47'
@@ -102,16 +112,15 @@ const Token = ({ id }: { id: number }) => {
 
   /* eslint-disable react/jsx-no-target-blank */
   return (
-    <div>
+    <CryptoMayorContainer>
       CryptoMayor{id}
       <div>
         {metadata && (
           <div>
             <h5>{metadata.name}</h5>
             {metadata.image && (
-              <img
+              <TokenImage
                 alt={`CryptoMayor${id}`}
-                style={{ maxWidth: '100px', height: 'auto' }}
                 src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`}
               />
             )}
@@ -141,9 +150,9 @@ const Token = ({ id }: { id: number }) => {
           </a>
         )}
       </div>
-    </div>
+    </CryptoMayorContainer>
   )
+  /* eslint-enable react/jsx-no-target-blank */
 }
-/* eslint-enable react/jsx-no-target-blank */
 
 export default Token
