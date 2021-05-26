@@ -1,9 +1,18 @@
 import { useRef, useState } from 'react'
+import styled from '@emotion/styled'
 import Pin from './Pin'
 import Token from './Token'
 import { Location } from '../common/types'
 import coordinates from '../coords'
 import ReactMapGL, { FullscreenControl, Popup, MapRef } from 'react-map-gl'
+import SearchBar from './SearchBar'
+
+const SearchBarContainer = styled.div`
+  position: fixed;
+  top: 1.5vh;
+  left: 1vw;
+  z-index: 99999;
+`
 
 const fullscreenControlStyle = {
   right: 10,
