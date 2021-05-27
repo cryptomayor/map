@@ -3,13 +3,41 @@ import { FaTwitter } from 'react-icons/fa'
 import { Metadata } from '../common/types'
 import styled from '@emotion/styled'
 
+const Container = styled.div`
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+
+  div,
+  a {
+    margin-top: 1rem;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    color: #6641bd;
+  }
+`
+
+const CryptoMayorIDHeader = styled.span`
+  margin-bottom: 0;
+`
+
+const LocationName = styled.h3`
+  margin-top: 0.3rem;
+  margin-bottom: 0.5rem;
+`
+
 const TokenImage = styled.img`
   max-width: 100px;
   height: auto;
-`
-
-const CryptoMayorContainer = styled.div`
-  padding-top: 10px;
 `
 
 const Token = ({ id }: { id: number }) => {
@@ -112,45 +140,40 @@ const Token = ({ id }: { id: number }) => {
 
   /* eslint-disable react/jsx-no-target-blank */
   return (
-    <CryptoMayorContainer>
-      CryptoMayor{id}
-      <div>
-        {metadata && (
-          <div>
-            <h5>{metadata.name}</h5>
-            {metadata.image && (
-              <TokenImage
-                alt={`CryptoMayor${id}`}
-                src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`}
-              />
-            )}
-          </div>
-        )}
-        {owner === 'apiError' && (
-          <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${id}`}>
-            See additional details here
+    <Container>
+      <CryptoMayorIDHeader>CryptoMayor{id}</CryptoMayorIDHeader>
+      {metadata && (
+        <>
+          <LocationName>{metadata.name}</LocationName>
+          {metadata.image && (
+            <TokenImage alt={`CryptoMayor${id}`} src={`https://gateway.pinata.cloud/ipfs/${metadata.image.slice(5)}`} />
+          )}
+        </>
+      )}
+      {owner === 'apiError' && (
+        <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${id}`}>
+          See additional details here
+        </a>
+      )}
+      {owner === 'unowned' && (
+        <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${id}`}>
+          unowned! get it now
+        </a>
+      )}
+      {owner && owner !== 'apiError' && owner !== 'unowned' && (
+        <div>
+          Owned By:{' '}
+          <a target="_blank" rel="noopener" href={`https://pool.pm/${owner}`}>
+            {owner.slice(0, 12)}...
           </a>
-        )}
-        {owner === 'unowned' && (
-          <a target="_blank" rel="noopener" href={`https://cryptomayor.io/#/city/${id}`}>
-            unowned! get it now
-          </a>
-        )}
-        {owner && owner !== 'apiError' && owner !== 'unowned' && (
-          <div>
-            Owned By:{' '}
-            <a target="_blank" rel="noopener" href={`https://pool.pm/${owner}`}>
-              {owner.slice(0, 12)}...
-            </a>
-          </div>
-        )}
-        {twitterHandle && (
-          <a target="_blank" rel="noopener" href={`https://twitter.com/${twitterHandle}`}>
-            {twitterHandle} <FaTwitter />
-          </a>
-        )}
-      </div>
-    </CryptoMayorContainer>
+        </div>
+      )}
+      {twitterHandle && (
+        <a target="_blank" rel="noopener" href={`https://twitter.com/${twitterHandle}`}>
+          {twitterHandle} <FaTwitter />
+        </a>
+      )}
+    </Container>
   )
   /* eslint-enable react/jsx-no-target-blank */
 }

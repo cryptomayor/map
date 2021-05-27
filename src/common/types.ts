@@ -14,6 +14,7 @@ export interface Metadata {
   asciiname: string
   country: string
   longitude: number
+  latitude: number
   admin1: string
   admin2: string
 }
