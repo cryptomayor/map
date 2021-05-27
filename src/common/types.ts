@@ -1,4 +1,4 @@
-export type Location = {
+export type CryptoMayorLocation = {
   id: number
   longitude: number
   latitude: number

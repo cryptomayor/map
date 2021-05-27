@@ -1,9 +1,9 @@
 import { FaMapPin } from 'react-icons/fa'
 import { Marker } from 'react-map-gl'
-import { Location } from '../common/types'
+import { CryptoMayorLocation } from '../common/types'
 
 interface PinProps {
-  location: Location
+  location: CryptoMayorLocation
   select: Function
 }
 

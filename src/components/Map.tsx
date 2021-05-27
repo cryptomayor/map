@@ -1,18 +1,11 @@
-import { useRef, useState } from 'react'
-import styled from '@emotion/styled'
+import { useEffect, useRef, useState } from 'react'
 import Pin from './Pin'
 import Token from './Token'
-import { Location } from '../common/types'
+import { CryptoMayorLocation } from '../common/types'
 import coordinates from '../coords'
-import ReactMapGL, { FullscreenControl, Popup, MapRef } from 'react-map-gl'
+import ReactMapGL, { FullscreenControl, Popup, MapRef, FlyToInterpolator, ViewportProps } from 'react-map-gl'
 import SearchBar from './SearchBar'
-
-const SearchBarContainer = styled.div`
-  position: fixed;
-  top: 1.5vh;
-  left: 1vw;
-  z-index: 99999;
-`
+import { easeCubic } from 'd3-ease'
 
 const fullscreenControlStyle = {
   right: 10,
@@ -21,7 +14,7 @@ const fullscreenControlStyle = {
 
 const Map = () => {
   const mapRef = useRef<MapRef>(null)
-  const [viewport, setViewport] = useState({
+  const [viewport, setViewport] = useState<ViewportProps>({
     width: 400,
     height: 400,
     latitude: 35.27517,
@@ -29,37 +22,65 @@ const Map = () => {
     zoom: 1,
   })
 
-  const [location, setLocation] = useState<Location | null>()
+  const [selectedLocation, setSelectedLocation] = useState<CryptoMayorLocation | null>()
+  const [visibleLocations, setVisibleLocations] = useState<CryptoMayorLocation[]>([])
+  const selectLocation = (location: CryptoMayorLocation, focus: boolean) => {
+    if (focus) {
+      setViewport({
+        width: 400,
+        height: 400,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        zoom: 8,
+        transitionDuration: 2500,
+        transitionInterpolator: new FlyToInterpolator(),
+        transitionEasing: easeCubic,
+      })
+    }
 
-  const selectLocation = (location: Location) => {
-    setLocation(location)
+    setSelectedLocation(location)
   }
 
-  const markers = []
-  if (mapRef.current) {
-    const bounds = mapRef.current.getMap().getBounds()
-    let pins = 0
-    for (let entry of Array.from(coordinates)) {
-      console.log(entry)
-      const key = entry[0]
-      const lat = entry[1][0]
-      const lng = entry[1][1]
-      if (bounds.contains([lng, lat])) {
-        markers.push(<Pin key={key} location={{ id: key, latitude: lat, longitude: lng }} select={selectLocation} />)
-        pins += 1
-      }
+  const selectLocationByID = (id: number, focus: boolean = true) => {
+    const location = coordinates.get(id)
 
-      if (pins >= 20) {
-        break
+    if (!location) {
+      return
+    }
+
+    selectLocation({ id, latitude: location[0], longitude: location[1] }, focus)
+  }
+
+  useEffect(() => {
+    const newVisibleLocations = []
+
+    if (mapRef.current) {
+      const bounds = mapRef.current.getMap().getBounds()
+      let pins = 0
+      for (let entry of Array.from(coordinates)) {
+        const id = entry[0]
+        const latitude = entry[1][0]
+        const longitude = entry[1][1]
+        if (bounds.contains([longitude, latitude])) {
+          newVisibleLocations.push({ id, latitude, longitude })
+          pins += 1
+        }
+
+        if (pins >= 20) {
+          break
+        }
       }
     }
-  }
+
+    setVisibleLocations(newVisibleLocations)
+  }, [viewport])
+
+  // Used to verify that we actually render a Pin for a currently selected location
+  let isDisplayingSelectedLocation = false
 
   return (
     <>
-      <SearchBarContainer>
-        <SearchBar />
-      </SearchBarContainer>
+      <SearchBar coordinates={coordinates} onSearchSelected={selectLocationByID} />
       <ReactMapGL
         {...viewport}
         width="100vw"
@@ -69,17 +90,25 @@ const Map = () => {
         mapboxApiAccessToken="pk.eyJ1IjoiY3J5cHRvbWF5b3IiLCJhIjoiY2tuYzh5bHAwMGJocjJvcnpzdGltdmZtOSJ9.H5wrB8rdRFgzgKbtPi3z5Q"
       >
         <FullscreenControl style={fullscreenControlStyle} />
-        {markers}
-        {location && (
+        {visibleLocations.map(({ id, latitude, longitude }) => {
+          if (id === selectedLocation?.id) {
+            isDisplayingSelectedLocation = true
+          }
+          return <Pin key={id} location={{ id, latitude, longitude }} select={selectLocation} />
+        })}
+        {selectedLocation && !isDisplayingSelectedLocation && (
+          <Pin key={selectedLocation.id} location={selectedLocation} select={selectLocation} />
+        )}
+        {selectedLocation && (
           <Popup
-            latitude={location.latitude}
-            longitude={location.longitude}
+            latitude={selectedLocation.latitude}
+            longitude={selectedLocation.longitude}
             closeButton={true}
             closeOnClick={false}
-            onClose={() => setLocation(null)}
+            onClose={() => setSelectedLocation(null)}
             anchor="top"
           >
-            <Token id={location.id} />
+            <Token id={selectedLocation.id} />
           </Popup>
         )}
       </ReactMapGL>
