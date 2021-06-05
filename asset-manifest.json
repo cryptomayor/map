@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/static/css/main.0314a87c.chunk.css",
+    "main.js": "/static/js/main.0c492531.chunk.js",
+    "main.js.map": "/static/js/main.0c492531.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.a9b276eb.js",
+    "runtime-main.js.map": "/static/js/runtime-main.a9b276eb.js.map",
+    "static/js/2.5432bfca.chunk.js": "/static/js/2.5432bfca.chunk.js",
+    "static/js/2.5432bfca.chunk.js.map": "/static/js/2.5432bfca.chunk.js.map",
+    "static/js/3.a231ae58.chunk.js": "/static/js/3.a231ae58.chunk.js",
+    "static/js/3.a231ae58.chunk.js.map": "/static/js/3.a231ae58.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.0314a87c.chunk.css.map": "/static/css/main.0314a87c.chunk.css.map",
+    "static/js/2.5432bfca.chunk.js.LICENSE.txt": "/static/js/2.5432bfca.chunk.js.LICENSE.txt",
+    "static/js/mapbox-gl-csp-worker.83897dd4.worker.js": "/static/js/mapbox-gl-csp-worker.83897dd4.worker.js",
+    "static/js/mapbox-gl-csp-worker.83897dd4.worker.js.map": "/static/js/mapbox-gl-csp-worker.83897dd4.worker.js.map",
+    "static/media/magnifying-glass.70a801c1.svg": "/static/media/magnifying-glass.70a801c1.svg"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.a9b276eb.js",
+    "static/js/2.5432bfca.chunk.js",
+    "static/css/main.0314a87c.chunk.css",
+    "static/js/main.0c492531.chunk.js"
+  ]
+}
